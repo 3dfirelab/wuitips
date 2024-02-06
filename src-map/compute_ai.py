@@ -29,9 +29,7 @@ if __name__ == '__main__':
     dir_data = '/mnt/dataMoor/WUITIPS/'
     dirin = dir_data+'TourismSpots/'
 
-    print('load clc ...', end='')
     sys.stdout.flush()
-    dir_data = '/mnt/dataEuropa/WII/'
     continent = 'europe'
     indir = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
     idxclc = range(1,7)
