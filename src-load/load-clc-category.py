@@ -25,7 +25,7 @@ if __name__ == '__main__':
     fuelCatTag.append(['311','321','323','324'])                       #3 forest3: Broad-leaved forest
     fuelCatTag.append(['322'])                                         #4 grass/shrub : Moors and heathland
     fuelCatTag.append(['411'])                                         #5 Inland marshes 
-    fuelCatTag.append(['211,212,213,221,222,223,231,241,242,243,244']) #6 Agricultural
+    fuelCatTag.append(['211','212','213','221','222','223','231','241','242','243','244']) #6 Agricultural
 
     clc = gpd.read_file(indir+'/U2018_CLC2018_V2020_20u1.gpkg')
     to_latlon = pyproj.Transformer.from_crs(clc.crs, 'epsg:4326')
@@ -35,6 +35,7 @@ if __name__ == '__main__':
     print(lowerCorner[::-1], upperCorner[::-1])
     
     for iv in categories:
+        if iv <6: continue
         print('  fuel cat: {:d}'.format(iv),end='')
 
         condition =  (pd.Series([False]*len(clc)))

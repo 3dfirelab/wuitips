@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     print('load clc ...', end='')
     sys.stdout.flush()
-    dir_data = '/mnt/dataEuropa/WII/'
+    dir_data = '/mnt/dataMoor/WUITIPS/'
     continent = 'europe'
     indir = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
     idxclc = range(1,7)
