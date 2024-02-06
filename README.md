@@ -1,4 +1,4 @@
-# wuitips
+# WUITIPS - Touristic Hot Spot Mapping
 touristic hot spot mapping for wuitips project
 
 ## 1. raw data
