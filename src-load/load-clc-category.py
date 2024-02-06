@@ -10,12 +10,12 @@ import pyproj
 
 if __name__ == '__main__':
 
-    categories = np.arange(1,6)
-    colorveg=['blue','green','orange','black','magenta']
+    categories = np.arange(1,7)
+    colorveg=['blue','green','orange','black','magenta','cian']
 
     print('fuel clc')
     indir = '/mnt/dataEuropa/WII/CLC/u2018_clc2018_v2020_20u1_geoPackage/DATA/'
-    outdir = './FuelCategories-CLC/europe/'
+    outdir = '/mnt/dataMoor/WUITIPS/FuelCategories-CLC/europe/'
     
     #set forest and agricultural class according to https://clc.gios.gov.pl/doc/clc/CLC_Legend_EN.pdf
      

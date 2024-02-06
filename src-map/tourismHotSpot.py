@@ -29,5 +29,9 @@ if __name__ == '__main__':
     WUI_ = gpd.read_file(dirinWUI+'WUIall.geojson')
     spots_ = gpd.read_file(dirinSpot+'spotsall.geojson')
 
+    round = np.vectorize(lambda geom: pg.apply(geom, lambda g: g.round(3)))
+    WUI_.geometry = round(WUI_.geometry.values.data)
+    
+    WUI_.geometry = WUI_.apply(lambda row: make_valid(row.geometry) if not row.geometry.is_valid else row.geometry, axis=1)
 
 

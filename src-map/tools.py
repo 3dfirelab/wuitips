@@ -168,71 +168,86 @@ def dist2FuelCat(indir,fuelCat, indus):
     return mindist, minPolyIdx
 
 ##########################
-def buildWII(WII, iv, fuelCat, indus, continent):
+def buildWUI(WUI, iv, fuelCat, spots, bufferDistVegCat, flag_ai = False):
 
     importlib.reload(glc)
    
-    bufferDistVegCat = [2400,1200,800,600,480,400,343]
+
     bb = 10.e3 
-    nbregroup = indus['group'].max() +1
+    nbregroup = spots['group'].max() +1
     #print('fuelCat{:d} - nbre group = {:d}'.format(iv,nbregroup))
     if  type(nbregroup) is not np.int64: pdb.set_trace()
     for ig in range(0, nbregroup):
         print('fuelCat{:d} - group {:d}/{:d} ... '.format(iv,ig,nbregroup),end='\r')
         sys.stdout.flush()
-        indus_ = indus.loc[indus['group']==ig]
-        #print(indus_.shape)
-        xmin, ymin, xmax, ymax = indus_.total_bounds
+        spots_ = spots.loc[spots['group']==ig]
+        #print(spots_.shape)
+        xmin, ymin, xmax, ymax = spots_.total_bounds
         
         if type(fuelCat) is gpd.geodataframe.GeoDataFrame:
             fuelCat_ = fuelCat.cx[xmin-bb:xmax+bb, ymin-bb:ymax+bb]
         else: 
             indir = '{:s}CLC/'.format(get_dirData())
-            to_latlon = pyproj.Transformer.from_crs(indus_.crs, 'epsg:4326')
+            to_latlon = pyproj.Transformer.from_crs(spots_.crs, 'epsg:4326')
             if np.abs(xmax-xmin) < 30.e3: bbx = 15.e3 
             else: bbx = bb
             if np.abs(ymax-ymin) < 30.e3: bby = 15.e3 
             else: bby = bb
 
-            lowerCorner = to_latlon.transform(xmin-bbx, ymin-bbx)
-            upperCorner = to_latlon.transform(xmax+bby, ymax+bby)
-            fuelCat_ = glc.clipped_fuelCat_gdf(indir, iv, indus_.crs, lowerCorner[1], lowerCorner[0], upperCorner[1], upperCorner[0])
+            #lowerCorner = to_latlon.transform(ymin-bbx, xmin-bbx )
+            #upperCorner = to_latlon.transform(ymax+bby, xmax+bby )
+            
+            lowerCorner = to_latlon.transform(xmin-bbx, ymin-bbx )
+            upperCorner = to_latlon.transform(xmax+bby, ymax+bby )
+
+            fuelCat_ = glc.clipped_fuelCat_gdf(indir, iv, spots_.crs, lowerCorner[1], lowerCorner[0], upperCorner[1], upperCorner[0])
             if fuelCat_ is None:
                 continue
             else: 
                 fuelCat_  =  add_AI2gdf(fuelCat_,ptdx=100,dbox=1000,PoverA=0.05)
-    
-        for iai in range(3):
-            if iai == 0: 
-                fuelCat__ = fuelCat_[(fuelCat_['AI']>0.9)                      ]
-            elif iai == 1: 
-                fuelCat__ = fuelCat_[(fuelCat_['AI']>0  )&(fuelCat_['AI']<=0.9)]
-            elif iai == 2: 
-                fuelCat__ = fuelCat_[(fuelCat_['AI']<=0 )                      ]  # to update to pass it to ==0. need PoverA update. 
-        
+  
+        if flag_ai: 
+            rangeIAI = 3
+        else:
+            rangeIAI = 1
+
+
+        for iai in range(rangeIAI):
+            
+            if flag_ai: 
+                if iai == 0: 
+                    fuelCat__ = fuelCat_[(fuelCat_['AI']>0.9)                      ]
+                elif iai == 1: 
+                    fuelCat__ = fuelCat_[(fuelCat_['AI']>0  )&(fuelCat_['AI']<=0.9)]
+                elif iai == 2: 
+                    fuelCat__ = fuelCat_[(fuelCat_['AI']<=0 )                      ]  # to update to pass it to ==0. need PoverA update. 
+            else: 
+                fuelCat__ = fuelCat_
+
             vegCat = iv + iai -1
             bufferDistVegCat_ = bufferDistVegCat[vegCat]
 
-            indus__ = indus_.copy()
-            indus__['geometry'] = indus_.geometry.apply(lambda g: g.buffer(bufferDistVegCat_))
+            spots__ = spots_.copy()
+            spots__['geometry'] = spots_.geometry.apply(lambda g: g.buffer(bufferDistVegCat_))
        
             if len(fuelCat__)>0:
-                WII_ = gpd.overlay(fuelCat__, indus__, how = 'intersection', keep_geom_type=False)
+                WUI_ = gpd.overlay(fuelCat__, spots__, how = 'intersection', keep_geom_type=False)
+                pdb.set_trace()
             else: 
                 continue 
 
-            if WII is None: 
-                WII = WII_
-            elif WII_.shape[0]>0:
-                WII = pd.concat([WII, WII_])
+            if WUI is None: 
+                WUI = WUI_
+            elif WUI_.shape[0]>0:
+                WUI = pd.concat([WUI, WUI_])
    
         #ax = plt.subplot(111)
-        #WII.plot(ax=ax)
-        #indus_.plot(ax=ax,color='k')
+        #WUI.plot(ax=ax)
+        #spots_.plot(ax=ax,color='k')
         #plt.show()
         #pdb.set_trace()
 
-    return WII
+    return WUI
 
 
 ##########################
