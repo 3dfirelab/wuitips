@@ -35,6 +35,7 @@ see `src-map/tourismWUI.py`
 it computes de WUI associated to each touristic polygon of the touristic infrastructure map.
 an input parameter `flag_ai` activate of not the use of AI (ie conversion of fuel to hazard categories)
 The distance of interaction of each fuel/hazard is defined in the variables `bufferDistVegCat` for each of the fuel category defined in `src-load/load-clc-category.py'.
+In the current version, forest type vegetation areas have a buffer distance of 200m and agricultural/grass areas have a buffer of 50m. 
 
 
 ## 4. Touristic Hot Spot
@@ -43,4 +44,6 @@ A touristic hot spot is defined as a polygon of the touristic infrastructure map
 
 
 ## 5. Display
-![preview MapBox](./misc/previewMapbox4README.png)
+[![preview MapBox](./misc/previewMapbox4README.png)](https://api.mapbox.com/styles/v1/ronan-p33/clpzpu45b01o701p92clb7b9o.html?title=view&access_token=pk.eyJ1Ijoicm9uYW4tcDMzIiwiYSI6ImNsYjE0cmNiZzE1b2ozb28zeGVpOW05NTEifQ.oWBlM-4JwJsG5KU-GwsnfQ&zoomwheel=true&fresh=true#13.78/42.54637/3.02711)
+The full domain made of catalunya and Languedoc-Roussillon is available on MapBox by cliking on the image above. 
+green is the wui generate by the touristic spot (yellow). When edge is red, the touristic spot is set as an hotspot as defined in section 3. 
