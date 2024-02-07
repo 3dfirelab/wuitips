@@ -5,8 +5,8 @@ touristic hot spot mapping for wuitips project
 
 ### the Open Street Map (osm) data 
 uploaded from the [geofabrik sever](https://download.geofabrik.de/)
-1. cataluna-latest.osm.pbf  
-1. languedoc-roussillon-latest.osm.pbf
+1. cataluna-latest.osm.pbf  (Dec 2023) 
+1. languedoc-roussillon-latest.osm.pbf (Nov 2023)
 
 ### the Corine Land Cover (lcl) data 
 upload fromt the [Copernicus server](https://land.copernicus.eu/en/products/corine-land-cover/clc2018)
@@ -39,5 +39,8 @@ The distance of interaction of each fuel/hazard is defined in the variables `buf
 
 ## 4. Touristic Hot Spot
 see `src-map/tourismHotSpot.py`
-A touristic hot spot is defined as a polygon of the touristic infrastructure map with a WUI area greater than 0.
+A touristic hot spot is defined as a polygon of the touristic infrastructure map with a WUI area greater than 10m2.
 
+
+## 5. Display
+![preview MapBox](./misc/previewMapbox4README.png)

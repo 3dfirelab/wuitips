@@ -13,11 +13,14 @@ import pandas as pd
 import geopandas as gpd
 import os
 import glob 
+import warnings
+from shapely.errors import ShapelyDeprecationWarning
+import pdb 
 
 if __name__ == '__main__':
 
     crs_here = 'epsg:3035'
-    dir_data = '/mnt/dataEstrella/WUITIPS/'
+    dir_data = '/mnt/dataMoor/WUITIPS/'
     dirin = dir_data+'OSM/'
     dirout = dir_data+'TourismSpots/'
 
@@ -29,8 +32,13 @@ if __name__ == '__main__':
         print(name)
         osm = pyrosm.OSM(filepath=osmfilein)
         custom_filter={'tourism': True}
-        tourism = osm.get_data_by_custom_criteria(custom_filter=custom_filter)
-        tourism = tourism.to_crs(crs_here)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)   
+            warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
+            warnings.simplefilter("ignore", UserWarning)         
+            tourism = osm.get_data_by_custom_criteria(custom_filter=custom_filter)
+            tourism = tourism.to_crs(crs_here)
+        print('tourism loaded')
 
         tourism_pt = tourism[(tourism.geom_type=='MultiPoint')|(tourism.geom_type=='Point')]
         #bounding_box = box(settlement_origin_x, settlement_origin_y-Ly, settlement_origin_x+Lx, settlement_origin_y)
@@ -44,7 +52,13 @@ if __name__ == '__main__':
         tourism['origin_type'] = 'tourism'
 
 
-        buildings = osm.get_buildings()
+        with warnings.catch_warnings():
+           warnings.simplefilter("ignore", DeprecationWarning)   
+           warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
+           warnings.simplefilter("ignore", UserWarning)  
+           ShapelyDeprecationWarning
+           buildings = osm.get_buildings()
+        print('buildings loaded')
         buildings = buildings.to_crs(crs_here)
         buildings = buildings[(buildings.geom_type == 'Polygon' ) | (buildings.geom_type == 'MultiPolygon') ]
 
@@ -67,17 +81,72 @@ if __name__ == '__main__':
 
         print('run sjoin')
         sys.stdout.flush()
-        buildings_tourism = gpd.sjoin(buildings, tourism_pt, op='contains')
+        buildings_tourism = gpd.sjoin(buildings, tourism_pt, predicate='contains')
         
         buildings_tourism['origin_type'] = 'building'
 
         
-        #save
+        #merged
+        tourism.geometry = tourism.geometry.buffer(-.01).buffer(.01)
+        buildings_tourism.geometry = buildings_tourism.geometry.buffer(-.01).buffer(.01)
+
         common_columns = tourism.columns.intersection(buildings_tourism.columns)
         merged =  pd.concat([tourism[common_columns], buildings_tourism[common_columns]], ignore_index=True)
         merged['IDSpot'] = np.arange(len(merged))
 
-        merged.to_file('{:s}/tourism-{:s}.geojson'.format(dirout,name), driver='GeoJSON')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
+            merged.geometry = merged.apply(lambda row: make_valid(row.geometry) if not row.geometry.is_valid else row.geometry, axis=1)
+
+        #remove overlap
+        # Create a spatial index for the GeoDataFrame
+        sindex = merged.sindex
+
+        # List to hold indices of polygons to remove
+        to_remove = []
+
+        # Iterate over each polygon in the GeoDataFrame
+        for index, polygon in merged.iterrows():
+            # Find potential candidates that might contain the current polygon
+
+            if len(polygon['geometry'].bounds) == 0: 
+                to_remove.append(index)
+                continue
+                #pdb.set_trace()
+            possible_matches_index = list(sindex.intersection(polygon['geometry'].bounds))
+            possible_matches = merged.iloc[possible_matches_index]
+           
+            # Check for actual containment excluding the polygon itself
+            flag_rm = False 
+            possible_index_arr = []
+            for possible_index, possible_polygon in possible_matches.iterrows():
+                possible_index_arr.append(possible_index)
+                if (index != possible_index) and (possible_index not in to_remove) and ( \
+                                                 (possible_polygon['geometry'].contains(polygon['geometry'])) | \
+                                                 (possible_polygon['geometry'].overlaps(polygon['geometry']))   \
+                                                )  :  
+                    
+                    if possible_polygon['geometry'].area >= polygon['geometry'].area: 
+                        if index not in to_remove : 
+                            to_remove.append(index)
+                            flag_rm = True
+                            break
+
+            if False: # 5700 in possible_index_arr: 
+                ax = plt.subplot(111)
+                ax.set_title('rm = {:b}, 1 is True'.format(flag_rm))
+                possible_matches.plot(alpha=0.3,ax=ax)
+                merged[index:index+1].plot(color='none',edgecolor='r',ax=ax)
+                plt.show()
+
+                pdb.set_trace()
+
+        # Remove polygons that are contained within others
+        merged_filtered = merged.drop(index=to_remove)
+
+
+        #save
+        merged_filtered.to_file('{:s}/tourism-{:s}.geojson'.format(dirout,name), driver='GeoJSON')
 
    
 

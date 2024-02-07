@@ -27,6 +27,8 @@ glc = importlib.import_module("load-glc-category")
 
 if __name__ == '__main__':
 
+    importlib.reload(tools)
+
     crs_here = 'epsg:3035'
     distgroup = 1.e4
     dir_data = '/mnt/dataMoor/WUITIPS/'
@@ -64,11 +66,13 @@ if __name__ == '__main__':
     WUI_tot = None
     spots_tot = None
 
-    for spotsFile in glob.glob(dirin+'*.geojson'):
-        
-        if os.path.basename(spotsFile) == 'spotsall.geojson': continue
+    for spotsFile in glob.glob(dirin+'*.geojson'):    
 
-        print('load tourism spot {:s}...'.format(spotsFile), end='')
+        if 'spotsall' in os.path.basename(spotsFile) : continue
+
+        name_ = '-'.join(os.path.basename(spotsFile).split('.')[0].split('-')[1:])
+
+        print('load tourism spot {:s}...'.format(name_), end='')
         spots = gpd.read_file(spotsFile)
         spots = spots.to_crs(crs_here)
         print(' done')
@@ -98,7 +102,16 @@ if __name__ == '__main__':
             WUI = tools.buildWUI(WUI, iv, fuelCat_all[iv-1], spots, bufferDistVegCat)
 
         print ('WUI area_ha = ', WUI.area.sum()*1.e-4, '                 ' )
-            
+        #WUI['IDSpot'] =  '{:s}-{:6d}'.format(name_,WUI['IDSpot'])
+
+        # Define a function that takes a row and returns a value based on 'input_column'
+        def custom_function(row):
+            return '{:s}-{:06d}'.format(name_,int(row['IDSpot']))
+
+        # Create 'output_column' by applying the function
+        WUI['IDSpot'] = WUI.apply(custom_function, axis=1)
+        spots['IDSpot'] = spots.apply(custom_function, axis=1)
+
         if WUI_tot is None: 
             if WUI.shape[0]!=0:
                 WUI_tot = WUI
