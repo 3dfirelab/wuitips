@@ -57,3 +57,7 @@ The full domain made of catalunya and Languedoc-Roussillon is available on MapBo
 Some stats over the domain: 
 - 9261 spots/infrasctrures
 - 5323 hot spots (57%)
+
+geojson files are available [here](https://www.dropbox.com/scl/fo/ahuonvqougmevyt9ies42/h?rlkey=5mrcp2s4pi3733yzkqu7hcv59&dl=0): 
+- `hotspotsall.geojson` contains all touristic spots. The varaiable `flag_hotspot` is set to one for selected hot spots. 
+- `WUIall.geojson` contains all the WUI associated to the above touristic spots.
