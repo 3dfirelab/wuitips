@@ -44,14 +44,20 @@ if __name__ == '__main__':
         #bounding_box = box(settlement_origin_x, settlement_origin_y-Ly, settlement_origin_x+Lx, settlement_origin_y)
         #tourism_pt = tourism_pt[tourism_pt.within(bounding_box)]
         
+        '''
         #keep only polygon in tourism
         tourism = tourism[tourism.geom_type!='MultiLineString']
         tourism = tourism[tourism.geom_type!='LineString']
         tourism = tourism[tourism.geom_type!='MultiPoint']
         tourism = tourism[tourism.geom_type!='Point']
         tourism['origin_type'] = 'tourism'
+        '''
+        
+        tourism = gpd.read_file('{:s}/{:s}_polygon_tourism.geojson'.format(dirin,name))
+        tourism['origin_type'] = 'tourism'
+        tourism = tourism.to_crs(crs_here)
 
-
+        '''
         with warnings.catch_warnings():
            warnings.simplefilter("ignore", DeprecationWarning)   
            warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
@@ -61,6 +67,10 @@ if __name__ == '__main__':
         print('buildings loaded')
         buildings = buildings.to_crs(crs_here)
         buildings = buildings[(buildings.geom_type == 'Polygon' ) | (buildings.geom_type == 'MultiPolygon') ]
+        '''
+        buildings = gpd.read_file('{:s}/{:s}_polygon_building.geojson'.format(dirin,name))
+        buildings = buildings.to_crs(crs_here)
+
 
         def ckdnearest(gdA, gdB, distThreshold=1000, k=10):
             nA = np.array(list(gdA.geometry.apply(lambda x: (x.centroid.x, x.centroid.y))))
@@ -104,6 +114,8 @@ if __name__ == '__main__':
 
         # List to hold indices of polygons to remove
         to_remove = []
+        
+        merged['geometry']=merged.buffer(-.2)
 
         # Iterate over each polygon in the GeoDataFrame
         for index, polygon in merged.iterrows():
@@ -132,7 +144,7 @@ if __name__ == '__main__':
                             flag_rm = True
                             break
 
-            if False: # 5700 in possible_index_arr: 
+            if False: #3736 in possible_index_arr: 
                 ax = plt.subplot(111)
                 ax.set_title('rm = {:b}, 1 is True'.format(flag_rm))
                 possible_matches.plot(alpha=0.3,ax=ax)

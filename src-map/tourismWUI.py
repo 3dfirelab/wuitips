@@ -43,11 +43,11 @@ if __name__ == '__main__':
     sys.stdout.flush()
     dir_data = '/mnt/dataMoor/WUITIPS/'
     continent = 'europe'
-    indir = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
+    indir_clc = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
     idxclc = range(1,7)
     fuelCat_all = []
     for iv in idxclc:
-        fuelCat_ = gpd.read_file(indir+'fuelCategory{:d}.geojson'.format(iv))
+        fuelCat_ = gpd.read_file(indir_clc+'fuelCategory{:d}.geojson'.format(iv))
         fuelCat_ = fuelCat_.to_crs(crs_here)
         fuelCat_all.append(fuelCat_)
     print(' done')
@@ -60,7 +60,6 @@ if __name__ == '__main__':
         if len(fuelCat_all) != len(bufferDistVegCat) :
             print('bufferDistVegCat dimension is not matching the number of fuel cat')
             sys.exit()
-
 
 
     WUI_tot = None
@@ -111,6 +110,8 @@ if __name__ == '__main__':
         # Create 'output_column' by applying the function
         WUI['IDSpot'] = WUI.apply(custom_function, axis=1)
         spots['IDSpot'] = spots.apply(custom_function, axis=1)
+        
+        WUI['area_ha'] = WUI['geometry'].area/ 10**4
 
         if WUI_tot is None: 
             if WUI.shape[0]!=0:
@@ -129,4 +130,17 @@ if __name__ == '__main__':
     WUI_tot.to_file(dirout+'WUIall.geojson',driver='GeoJSON')
     spots_tot.to_file(dirin+'spotsall.geojson',driver='GeoJSON')
 
+
+    #to save clc for the zone
+    forest = pd.concat(fuelCat_all[:3])
+    agri = pd.concat(fuelCat_all[3:])
+    minx,miny,maxx,maxy = WUI_tot.total_bounds
+
+    minx -= 1000
+    miny -= 1000
+    maxx += 1000
+    maxy += 1000
+
+    forest.cx[minx:maxx,miny:maxy].to_file(indir_clc+'forest.geojson',driver='GeoJSON')
+    agri.cx[minx:maxx,miny:maxy].to_file(indir_clc+'agriculture.geojson',driver='GeoJSON')
 

@@ -31,6 +31,8 @@ if __name__ == '__main__':
 
     WUI = gpd.read_file(dirinWUI+'WUIall.geojson')
     spots = gpd.read_file(dirinSpot+'spotsall.geojson')
+    
+    WUI['area_ha'] = WUI['geometry'].area/ 10**4
 
     WUI.geometry = WUI.apply(lambda row: make_valid(row.geometry) if not row.geometry.is_valid else row.geometry, axis=1)
 
