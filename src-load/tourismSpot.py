@@ -29,7 +29,9 @@ if __name__ == '__main__':
         name = os.path.basename(osmfilein).split('-latest')[0]
         #if os.path.isfile('{:s}/tourism-{:s}.geojson'.format(dirout,name)): continue
 
+        if 'test' in name: continue 
         print(name)
+
         osm = pyrosm.OSM(filepath=osmfilein)
         custom_filter={'tourism': True}
         with warnings.catch_warnings():
@@ -92,6 +94,7 @@ if __name__ == '__main__':
         print('run sjoin')
         sys.stdout.flush()
         buildings_tourism = gpd.sjoin(buildings, tourism_pt, predicate='contains')
+        buildings_tourism.rename(columns={'tourism_right': 'tourism'}, inplace=True)
         
         buildings_tourism['origin_type'] = 'building'
 
