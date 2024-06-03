@@ -27,6 +27,8 @@ glc = importlib.import_module("load-glc-category")
 
 if __name__ == '__main__':
 
+    importlib.reload(tools)
+
     crs_here = 'epsg:3035'
     distgroup = 1.e4
     dir_data = '/mnt/dataMoor/WUITIPS/'
@@ -39,13 +41,13 @@ if __name__ == '__main__':
 
     print('load clc ...', end='')
     sys.stdout.flush()
-    dir_data = '/mnt/dataEuropa/WII/'
+    dir_data = '/mnt/dataMoor/WUITIPS/'
     continent = 'europe'
-    indir = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
+    indir_clc = '{:s}FuelCategories-CLC/{:s}/'.format(dir_data,continent)
     idxclc = range(1,7)
     fuelCat_all = []
     for iv in idxclc:
-        fuelCat_ = gpd.read_file(indir+'fuelCategory{:d}.geojson'.format(iv))
+        fuelCat_ = gpd.read_file(indir_clc+'fuelCategory{:d}.geojson'.format(iv))
         fuelCat_ = fuelCat_.to_crs(crs_here)
         fuelCat_all.append(fuelCat_)
     print(' done')
@@ -60,15 +62,16 @@ if __name__ == '__main__':
             sys.exit()
 
 
-
     WUI_tot = None
     spots_tot = None
 
-    for spotsFile in glob.glob(dirin+'*.geojson'):
-        
-        if os.path.basename(spotsFile) == 'spotsall.geojson': continue
+    for spotsFile in glob.glob(dirin+'*.geojson'):    
 
-        print('load tourism spot {:s}...'.format(spotsFile), end='')
+        if 'spotsall' in os.path.basename(spotsFile) : continue
+
+        name_ = '-'.join(os.path.basename(spotsFile).split('.')[0].split('-')[1:])
+
+        print('load tourism spot {:s}...'.format(name_), end='')
         spots = gpd.read_file(spotsFile)
         spots = spots.to_crs(crs_here)
         print(' done')
@@ -98,7 +101,18 @@ if __name__ == '__main__':
             WUI = tools.buildWUI(WUI, iv, fuelCat_all[iv-1], spots, bufferDistVegCat)
 
         print ('WUI area_ha = ', WUI.area.sum()*1.e-4, '                 ' )
-            
+        #WUI['IDSpot'] =  '{:s}-{:6d}'.format(name_,WUI['IDSpot'])
+
+        # Define a function that takes a row and returns a value based on 'input_column'
+        def custom_function(row):
+            return '{:s}-{:06d}'.format(name_,int(row['IDSpot']))
+
+        # Create 'output_column' by applying the function
+        WUI['IDSpot'] = WUI.apply(custom_function, axis=1)
+        spots['IDSpot'] = spots.apply(custom_function, axis=1)
+        
+        WUI['area_ha'] = WUI['geometry'].area/ 10**4
+
         if WUI_tot is None: 
             if WUI.shape[0]!=0:
                 WUI_tot = WUI
@@ -116,4 +130,17 @@ if __name__ == '__main__':
     WUI_tot.to_file(dirout+'WUIall.geojson',driver='GeoJSON')
     spots_tot.to_file(dirin+'spotsall.geojson',driver='GeoJSON')
 
+
+    #to save clc for the zone
+    forest = pd.concat(fuelCat_all[:3])
+    agri = pd.concat(fuelCat_all[3:])
+    minx,miny,maxx,maxy = WUI_tot.total_bounds
+
+    minx -= 1000
+    miny -= 1000
+    maxx += 1000
+    maxy += 1000
+
+    forest.cx[minx:maxx,miny:maxy].to_file(indir_clc+'forest.geojson',driver='GeoJSON')
+    agri.cx[minx:maxx,miny:maxy].to_file(indir_clc+'agriculture.geojson',driver='GeoJSON')
 

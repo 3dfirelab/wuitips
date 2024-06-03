@@ -232,7 +232,6 @@ def buildWUI(WUI, iv, fuelCat, spots, bufferDistVegCat, flag_ai = False):
        
             if len(fuelCat__)>0:
                 WUI_ = gpd.overlay(fuelCat__, spots__, how = 'intersection', keep_geom_type=False)
-                pdb.set_trace()
             else: 
                 continue 
 
