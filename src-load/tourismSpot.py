@@ -20,48 +20,59 @@ import pdb
 if __name__ == '__main__':
 
     crs_here = 'epsg:3035'
-    dir_data2 = '/mnt/mediaMoritz/anneuden//WUITIPS/'
-    dir_data = '/mnt/dataEstrella/WII/'
+    dir_data = '/home/paugam/Data/WUITIPS/'
     dirin = dir_data+'OSM/PerCountry-europe/'
-    dirout = dir_data2+'TourismSpots-EU/'
+    dirout = dir_data+'TourismSpots-EU/'
     #dir_data = '/mnt/dataMoor/WUITIPS/'
     #dirin = dir_data+'OSM/'
     #dirout = dir_data+'TourismSpots/'
 
-    for osmfilein in glob.glob(dirin+'*.pbf'):
+    for osmfilein in sorted(glob.glob(dirin+'*.pbf')):
 
-        name = os.path.basename(osmfilein).split('-latest')[0]
+        name = os.path.basename(osmfilein).split('.osm')[0]
         #if os.path.isfile('{:s}/tourism-{:s}.geojson'.format(dirout,name)): continue
 
-        print(name)
-        osm = pyrosm.OSM(filepath=osmfilein)
+        print(os.path.basename(osmfilein))
+        try:
+            osm = pyrosm.OSM(filepath=osmfilein)
+        except:
+            print('failed opening osm')
+            continue
         custom_filter={'tourism': True}
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)   
             warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
             warnings.simplefilter("ignore", UserWarning)         
             tourism = osm.get_data_by_custom_criteria(custom_filter=custom_filter)
-            tourism = tourism.to_crs(crs_here)
+            if tourism is None: 
+                pass
+            else: 
+                tourism = tourism.to_crs(crs_here)
         print('tourism loaded')
+        
+        if tourism is not None: 
+            tourism_pt = tourism[(tourism.geom_type=='MultiPoint')|(tourism.geom_type=='Point')]
+        else: 
+            tourism_pt = gpd.GeoDataFrame(columns=['geometry'], geometry='geometry')
 
-        tourism_pt = tourism[(tourism.geom_type=='MultiPoint')|(tourism.geom_type=='Point')]
         #bounding_box = box(settlement_origin_x, settlement_origin_y-Ly, settlement_origin_x+Lx, settlement_origin_y)
         #tourism_pt = tourism_pt[tourism_pt.within(bounding_box)]
         
-        '''
-        #keep only polygon in tourism
-        tourism = tourism[tourism.geom_type!='MultiLineString']
-        tourism = tourism[tourism.geom_type!='LineString']
-        tourism = tourism[tourism.geom_type!='MultiPoint']
-        tourism = tourism[tourism.geom_type!='Point']
-        tourism['origin_type'] = 'tourism'
-        '''
         
-        tourism = gpd.read_file('{:s}/{:s}_polygon_tourism.geojson'.format(dirin,name))
-        tourism['origin_type'] = 'tourism'
-        tourism = tourism.to_crs(crs_here)
+        if tourism is not None: 
+            #keep only polygon in tourism
+            tourism = tourism[tourism.geom_type!='MultiLineString']
+            tourism = tourism[tourism.geom_type!='LineString']
+            tourism = tourism[tourism.geom_type!='MultiPoint']
+            tourism = tourism[tourism.geom_type!='Point']
+            tourism['origin_type'] = 'tourism'
+        
+        
+        #tourism = gpd.read_file('{:s}/{:s}_polygon_tourism.geojson'.format(dirin,name))
+        #tourism['origin_type'] = 'tourism'
+        #tourism = tourism.to_crs(crs_here)
 
-        '''
+        
         with warnings.catch_warnings():
            warnings.simplefilter("ignore", DeprecationWarning)   
            warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
@@ -71,9 +82,9 @@ if __name__ == '__main__':
         print('buildings loaded')
         buildings = buildings.to_crs(crs_here)
         buildings = buildings[(buildings.geom_type == 'Polygon' ) | (buildings.geom_type == 'MultiPolygon') ]
-        '''
-        buildings = gpd.read_file('{:s}/{:s}_polygon_building.geojson'.format(dirin,name))
-        buildings = buildings.to_crs(crs_here)
+        
+        #buildings = gpd.read_file('{:s}/{:s}_polygon_building.geojson'.format(dirin,name))
+        #buildings = buildings.to_crs(crs_here)
 
 
         def ckdnearest(gdA, gdB, distThreshold=1000, k=10):
@@ -95,22 +106,28 @@ if __name__ == '__main__':
 
         print('run sjoin')
         sys.stdout.flush()
-        buildings_tourism = gpd.sjoin(buildings, tourism_pt, predicate='contains')
+        if tourism_pt.shape[0] == 0: 
+            merged = buildings
+        else:
+            buildings_tourism = gpd.sjoin(buildings, tourism_pt, predicate='contains')
+            
+            buildings_tourism['origin_type'] = 'building'
+            
+            #merged
+            tourism.geometry = tourism.geometry.buffer(-.01).buffer(.01)
+            buildings_tourism.geometry = buildings_tourism.geometry.buffer(-.01).buffer(.01)
+            
+            common_columns = tourism.columns.intersection(buildings_tourism.columns)
+            merged =  pd.concat([tourism[common_columns], buildings_tourism[common_columns]], ignore_index=True)
+            merged['IDSpot'] = np.arange(len(merged))
+            
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
+                merged.geometry = merged.apply(lambda row: make_valid(row.geometry) if not row.geometry.is_valid else row.geometry, axis=1)
         
-        buildings_tourism['origin_type'] = 'building'
 
-        
-        #merged
-        tourism.geometry = tourism.geometry.buffer(-.01).buffer(.01)
-        buildings_tourism.geometry = buildings_tourism.geometry.buffer(-.01).buffer(.01)
 
-        common_columns = tourism.columns.intersection(buildings_tourism.columns)
-        merged =  pd.concat([tourism[common_columns], buildings_tourism[common_columns]], ignore_index=True)
-        merged['IDSpot'] = np.arange(len(merged))
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ShapelyDeprecationWarning)   
-            merged.geometry = merged.apply(lambda row: make_valid(row.geometry) if not row.geometry.is_valid else row.geometry, axis=1)
 
         #remove overlap
         # Create a spatial index for the GeoDataFrame
