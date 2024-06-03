@@ -17,9 +17,10 @@ import glob
 if __name__ == '__main__':
 
     crs_here = 'epsg:3035'
-    dir_data = '/mnt/dataEstrella/WUITIPS/'
-    dirin = dir_data+'OSM/'
-    dirout = dir_data+'TourismSpots/'
+    dir_data2 = '/mnt/mediaMoritz/anneuden//WUITIPS/'
+    dir_data = '/mnt/dataEstrella/WII/'
+    dirin = dir_data+'OSM/PerCountry-europe/'
+    dirout = dir_data2+'TourismSpots-EU/'
 
     for osmfilein in glob.glob(dirin+'*.pbf'):
 
