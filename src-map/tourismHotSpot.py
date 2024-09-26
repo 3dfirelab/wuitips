@@ -24,8 +24,8 @@ if __name__ == '__main__':
     need geo env with shapely > version 2.
     '''
 
-    dir_data = '/mnt/dataMoor/WUITIPS/'
-    dirinSpot = dir_data+'TourismSpots/'
+    dir_data = '/mnt/dataEuropa/WUITIPS/'
+    dirinSpot = dir_data+'TourismSpots-EU/'
     dirinWUI = dir_data+'WUI/'
 
 

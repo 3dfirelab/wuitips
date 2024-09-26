@@ -14,6 +14,11 @@ import pandas as pd
 import geopandas as gpd
 import importlib
 import pdb 
+import warnings
+
+# Convert all warnings to errors
+warnings.filterwarnings("error")
+
 
 #homebrewed
 import tools
@@ -31,8 +36,8 @@ if __name__ == '__main__':
 
     crs_here = 'epsg:3035'
     distgroup = 1.e4
-    dir_data = '/mnt/dataMoor/WUITIPS/'
-    dirin = dir_data+'TourismSpots/'
+    dir_data = '/mnt/dataEuropa/WUITIPS/'
+    dirin = dir_data+'TourismSpots-EU/'
     dirout = dir_data+'WUI/'
 
     bufferDistVegCat = [200,200,200,50,50,50]
@@ -76,7 +81,7 @@ if __name__ == '__main__':
         spots = spots.to_crs(crs_here)
         print(' done')
         
-        WUI = gpd.GeoDataFrame(geometry=[])
+        WUI = gpd.GeoDataFrame(geometry=[], crs=crs_here)
         
         spots['area_ha'] = spots['geometry'].area/ 10**4
         #spots = spots[spots['area_ha']>1]

@@ -234,12 +234,20 @@ def buildWUI(WUI, iv, fuelCat, spots, bufferDistVegCat, flag_ai = False):
                 WUI_ = gpd.overlay(fuelCat__, spots__, how = 'intersection', keep_geom_type=False)
             else: 
                 continue 
+           
+            if WUI_.crs is None: 
+                WUI_.crs  = fuelCat.crs
+            
+            if WUI_ is None: 
+                continue
 
             if WUI is None: 
                 WUI = WUI_
             elif WUI_.shape[0]>0:
-                WUI = pd.concat([WUI, WUI_])
-   
+                try:
+                    WUI = pd.concat([WUI, WUI_])
+                except: 
+                    pdb.set_trace()
         #ax = plt.subplot(111)
         #WUI.plot(ax=ax)
         #spots_.plot(ax=ax,color='k')
